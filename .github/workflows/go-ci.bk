@@ -19,11 +19,11 @@ jobs:
         with:
           go-version: "1.25"
 
-      - name: Install gotestsum
-        run: go install gotest.tools/gotestsum@latest
+      - name: Install dependencies
+        run: go mod download
 
       - name: Run Unit Tests
-        run: gotestsum --format github-actions -- ./...
+        run: go test -v ./...
 
       - name: Run Automation Tests
         run: |
@@ -33,5 +33,5 @@ jobs:
           # Đợi cho đến khi server sẵn sàng (thay vì sleep cố định)
           timeout 30s sh -c 'until curl -s http://127.0.0.1:8080/ping; do sleep 1; done'
           
-          # Chạy bộ Automation Test với gotestsum và nhãn 'automation'
-          gotestsum --format github-actions -- -v -tags automation ./tests/automation/...
+          # Chạy bộ Automation Test với build tag 'automation'
+          go test -v -tags automation ./tests/automation/...
