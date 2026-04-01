@@ -1,3 +1,5 @@
+//go:build automation
+
 package automation
 
 import (
@@ -10,7 +12,7 @@ import (
 // TestOrderFlow thực hiện kịch bản test từ đầu đến cuối
 func TestOrderFlow(t *testing.T) {
 	// Khởi tạo httpexpect gắn với đối tượng t (testing.T)
-	e := httpexpect.Default(t, "http://localhost:8080")
+	e := httpexpect.Default(t, "http://127.0.0.1:8080")
 
 	// 1. Test Ping
 	t.Log("🚀 Case 0: Ping check...")
@@ -44,7 +46,7 @@ func TestOrderFlow(t *testing.T) {
 
 // Bạn cũng có thể viết thêm các case test lỗi (Negative Cases)
 func TestCreateOrder_InvalidData(t *testing.T) {
-	e := httpexpect.Default(t, "http://localhost:8080")
+	e := httpexpect.Default(t, "http://127.0.0.1:8080")
 
 	t.Log("🚀 Case 3: Create Order with missing data...")
 	e.POST("/orders").

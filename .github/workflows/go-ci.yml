@@ -29,9 +29,9 @@ jobs:
         run: |
           # Chạy server ở chế độ background
           go run main.go &
-
-          # Đợi 5 giây để server sẵn sàng
-          sleep 5
-
-          # Chạy bộ Automation Test chuyên nghiệp
-          go test -v ./tests/automation/...
+          
+          # Đợi cho đến khi server sẵn sàng (thay vì sleep cố định)
+          timeout 30s sh -c 'until curl -s http://127.0.0.1:8080/ping; do sleep 1; done'
+          
+          # Chạy bộ Automation Test với build tag 'automation'
+          go test -v -tags automation ./tests/automation/...
