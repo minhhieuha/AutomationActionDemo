@@ -19,43 +19,23 @@ jobs:
         with:
           go-version: "1.25"
 
-      - name: Install reporting tools
+      - name: Run All Tests & Generate Report
         run: |
-          go install gotest.tools/gotestsum@latest
-          go install github.com/vakenbolt/go-test-report@latest
-
-      - name: Run Unit Tests
-        run: |
-          go test -json -v ./... > unit_report.json
-          cat unit_report.json | gotestsum --format github-actions
-
-      - name: Run Automation Tests
-        if: always()
-        run: |
-          # Chạy server ở chế độ background
+          # 1. Bật server ở chế độ background
           go run main.go &
           
-          # Đợi cho đến khi server sẵn sàng (thay vì sleep cố định)
+          # 2. Đợi cho đến khi server sẵn sàng (ping thành công)
           timeout 30s sh -c 'until curl -s http://127.0.0.1:8080/ping; do sleep 1; done'
           
-          # Chạy bộ Automation Test với output JSON để tạo báo cáo sau này
-          # '|| true' để code không dừng lại nếu test bị FAIL nhé
-          go test -json -v -tags automation ./tests/automation/... > auto_report.json || true
-          cat auto_report.json | gotestsum --format github-actions
-
-      - name: Generate HTML Report
-        if: always()
-        run: |
-          # Chỉ gộp những file JSON thực sự tồn tại
-          [ -f unit_report.json ] && cp unit_report.json total_report.json || touch total_report.json
-          [ -f auto_report.json ] && cat auto_report.json >> total_report.json || true
+          # 3. Chạy TẤT CẢ các test (Unit + Automation) trong 1 lần duy nhất
+          # Lệnh này sẽ tạo ra 1 file JSON hoàn hảo cho go-test-report
+          go test -json -v -tags automation ./... > report.json || true
           
-          # Tạo báo cáo HTML từ file tổng hợp (Dùng ống dẫn | )
-          if [ -s total_report.json ]; then
-            cat total_report.json | go-test-report -o report.html
-          else
-            echo "No test results found to generate report."
-          fi
+          # 4. Hiển thị lỗi lên Annotations của GitHub
+          cat report.json | gotestsum --format github-actions
+          
+          # 5. Tạo báo cáo HTML từ file JSON duy nhất này (Dùng ống dẫn | )
+          cat report.json | go-test-report -o report.html
 
       - name: Upload Test Report Artifact
         if: always()
