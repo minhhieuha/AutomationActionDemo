@@ -2,9 +2,9 @@ name: Go CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [main, master]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master]
 
 jobs:
   test:
@@ -31,8 +31,7 @@ jobs:
           cat unit_report.json | gotestsum --format github-actions
 
       - name: Run Automation Tests
-        # Chỉ chạy Automation khi có Pull Request hoặc push vào các nhánh quan trọng
-        if: success() && (github.event_name == 'pull_request' || contains(fromJSON('["main", "master", "develop"]'), github.ref_name))
+        if: success()
         run: |
           # Bật server ở chế độ background
           go run main.go &

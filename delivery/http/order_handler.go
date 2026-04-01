@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"testing-demo/domain"
@@ -26,11 +25,6 @@ func NewOrderHandler(router *gin.Engine, uc domain.OrderUsecase) {
 
 // Ping health check endpoint
 func (h *OrderHandler) Ping(c *gin.Context) {
-	//fmt.Println(time.Now)
-	a := 1
-	b := 0
-	d := (a / b)
-	fmt.Println(d)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "pong",
 	})
