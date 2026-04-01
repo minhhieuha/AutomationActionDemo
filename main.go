@@ -31,4 +31,5 @@ func main() {
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("[SERVER] Failed to start: %v", err)
 	}
+	log.Println("TEST")
 }
