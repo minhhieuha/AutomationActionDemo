@@ -50,9 +50,9 @@ jobs:
           [ -f unit_report.json ] && cp unit_report.json total_report.json || touch total_report.json
           [ -f auto_report.json ] && cat auto_report.json >> total_report.json || true
           
-          # Tạo báo cáo HTML từ file tổng hợp
+          # Tạo báo cáo HTML từ file tổng hợp (Dùng ống dẫn | )
           if [ -s total_report.json ]; then
-            go-test-report -input total_report.json -output report.html
+            cat total_report.json | go-test-report -o report.html
           else
             echo "No test results found to generate report."
           fi
