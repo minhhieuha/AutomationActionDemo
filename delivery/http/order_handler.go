@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"testing-demo/domain"
@@ -25,8 +26,9 @@ func NewOrderHandler(router *gin.Engine, uc domain.OrderUsecase) {
 
 // Ping health check endpoint
 func (h *OrderHandler) Ping(c *gin.Context) {
+	fmt.Println("Auto Merge 2")
 	c.JSON(http.StatusOK, gin.H{
-		"message": "not pong 1",
+		"message": "pong",
 	})
 }
 
