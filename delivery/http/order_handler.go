@@ -26,7 +26,7 @@ func NewOrderHandler(router *gin.Engine, uc domain.OrderUsecase) {
 // Ping health check endpoint
 func (h *OrderHandler) Ping(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"message": "not pong",
+		"message": "not pong 1",
 	})
 }
 
