@@ -48,15 +48,18 @@ jobs:
       - name: Generate HTML Report
         if: always()
         run: |
-          # Chỉ lấy các dòng JSON chuẩn để gộp báo cáo
-          [ -f unit_report.json ] && grep "^{" unit_report.json > total_report.json || touch total_report.json
-          [ -f auto_report.json ] && grep "^{" auto_report.json >> total_report.json || true
+          # Ghép các file JSON và lọc lấy các dòng JSON hợp lệ của Go Test
+          [ -f unit_report.json ] && grep "^{.*}$" unit_report.json > total_report.json || touch total_report.json
+          [ -f auto_report.json ] && grep "^{.*}$" auto_report.json >> total_report.json || true
           
-          # Tạo báo cáo HTML từ file tổng hợp (Dùng ống dẫn | )
+          # Nếu file tổng hợp có dữ liệu, thử tạo báo cáo
           if [ -s total_report.json ]; then
-            cat total_report.json | go-test-report -o report.html
+            # Thử dùng công cụ chính, nếu lỗi (do Panic) thì tự tạo HTML đơn giản
+            cat total_report.json | go-test-report -o report.html || {
+              echo "<html><body><h1>Tests Failed with Panic</h1><p>Check GitHub Actions logs for details.</p></body></html>" > report.html
+            }
           else
-            echo "No test results found to generate report."
+            echo "<html><body><h1>No test results found</h1></body></html>" > report.html
           fi
 
       - name: Upload Test Report Artifact
