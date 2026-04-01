@@ -1,0 +1,116 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+)
+
+const baseURL = "http://localhost:8080"
+
+type OrderResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    struct {
+		ID           int    `json:"id"`
+		CustomerName string `json:"customer_name"`
+		Item         string `json:"item"`
+	} `json:"data"`
+}
+
+func AutomationTest() {
+	fmt.Println("🚀 Bắt đầu chạy Automation Test cho API...")
+
+	// 1. Kiểm tra Ping (Health Check)
+	testPing()
+
+	// 2. Tạo đơn hàng (POST)
+	orderID := testCreateOrder()
+
+	// 3. Lấy thông tin đơn hàng vừa tạo (GET)
+	if orderID != 0 {
+		testGetOrder(orderID)
+	}
+
+	fmt.Println("\n✅ Hoàn thành tất cả các Test Cases.")
+}
+
+func testPing() {
+	fmt.Print("- Case 0: Kiểm tra kết nối (Ping)... ")
+	resp, err := http.Get(baseURL + "/ping")
+	if err != nil {
+		fmt.Printf("❌ FAIL (Server chưa bật? %v)\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("PASS")
+	} else {
+		fmt.Printf("❌ FAIL (Status: %d)\n", resp.StatusCode)
+	}
+}
+
+func testCreateOrder() int {
+	fmt.Print("- Case 1: Tạo đơn hàng mới (POST /orders)... ")
+
+	payload := map[string]string{
+		"customer_name": "Automation Bot",
+		"item":          "MacBook Pro M3",
+	}
+	body, _ := json.Marshal(payload)
+
+	resp, err := http.Post(baseURL+"/orders", "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		fmt.Printf("❌ FAIL (%v)\n", err)
+		return 0
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		fmt.Printf("❌ FAIL (Status code: %d)\n", resp.StatusCode)
+		return 0
+	}
+
+	var result OrderResponse
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		fmt.Printf("❌ FAIL (Decode JSON: %v)\n", err)
+		return 0
+	}
+
+	fmt.Printf("PASS (ID: %d)\n", result.Data.ID)
+	return result.Data.ID
+}
+
+func testGetOrder(id int) {
+	fmt.Printf("- Case 2: Truy vấn đơn hàng vừa tạo (GET /orders/%d)... ", id)
+
+	resp, err := http.Get(fmt.Sprintf("%s/orders/%d", baseURL, id))
+	if err != nil {
+		fmt.Printf("❌ FAIL (%v)\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// Đôi khi cần đợi 1 chút nếu server xử lý chậm (trong thực tế)
+		fmt.Printf("❌ FAIL (Status code: %d)\n", resp.StatusCode)
+		// Debug body nếu lỗi
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Printf("Response: %s\n", string(body))
+		return
+	}
+
+	var result OrderResponse
+	json.NewDecoder(resp.Body).Decode(&result)
+
+	if result.Data.CustomerName == "Automation Bot" && result.Data.Item == "MacBook Pro M3" {
+		fmt.Println("PASS")
+	} else {
+		fmt.Printf("❌ FAIL (Dữ liệu không khớp: %+v)\n", result.Data)
+	}
+}

@@ -1,0 +1,13 @@
+mode: set
+testing-demo/delivery/http/order_handler.go:16.66,24.2 4 1
+testing-demo/delivery/http/order_handler.go:27.45,31.2 1 1
+testing-demo/delivery/http/order_handler.go:34.52,40.47 2 1
+testing-demo/delivery/http/order_handler.go:40.47,46.3 2 1
+testing-demo/delivery/http/order_handler.go:48.2,49.16 2 1
+testing-demo/delivery/http/order_handler.go:49.16,55.3 2 1
+testing-demo/delivery/http/order_handler.go:57.2,61.4 1 1
+testing-demo/delivery/http/order_handler.go:65.49,68.16 3 1
+testing-demo/delivery/http/order_handler.go:68.16,74.3 2 1
+testing-demo/delivery/http/order_handler.go:76.2,77.16 2 1
+testing-demo/delivery/http/order_handler.go:77.16,83.3 2 1
+testing-demo/delivery/http/order_handler.go:85.2,88.4 1 1

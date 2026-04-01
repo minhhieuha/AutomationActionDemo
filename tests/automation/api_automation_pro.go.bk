@@ -1,0 +1,46 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gavv/httpexpect/v2"
+)
+
+func AutomationTestPro() {
+	// Trong Automation Test thực tế, họ thường chạy bằng lệnh 'go test'
+	// nhưng ở đây tôi viết hàm main để bạn chạy 'go run' cho quen thuộc.
+
+	e := httpexpect.Default(nil, "http://localhost:8080")
+
+	// 1. Test Ping
+	fmt.Println("🚀 Case 0: Ping check...")
+	e.GET("/ping").
+		Expect().
+		Status(http.StatusOK).
+		JSON().Object().Value("message").IsEqual("pong")
+
+	// 2. Test Create Order
+	fmt.Println("🚀 Case 1: Create Order...")
+	resp := e.POST("/orders").
+		WithJSON(map[string]interface{}{
+			"customer_name": "Pro Tester",
+			"item":          "iPhone 15 Pro",
+		}).
+		Expect().
+		Status(http.StatusCreated).
+		JSON().Object()
+
+	// Lấy ID từ Response
+	orderID := resp.Value("data").Object().Value("id").Number().Raw()
+
+	// 3. Test Get Order
+	fmt.Printf("🚀 Case 2: Get Order ID %.0f...\n", orderID)
+	e.GET("/orders/{id}").WithPath("id", orderID).
+		Expect().
+		Status(http.StatusOK).
+		JSON().Object().
+		Path("$.data.customer_name").IsEqual("Pro Tester")
+
+	fmt.Println("\n✅ [PRO] Tất cả các bước đều PASS!")
+}
