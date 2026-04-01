@@ -30,7 +30,6 @@ jobs:
           cat unit_report.json | gotestsum --format github-actions
 
       - name: Run Automation Tests
-        if: always()
         run: |
           # Chạy server ở chế độ background
           go run main.go &
@@ -39,23 +38,17 @@ jobs:
           timeout 30s sh -c 'until curl -s http://127.0.0.1:8080/ping; do sleep 1; done'
           
           # Chạy bộ Automation Test với output JSON để tạo báo cáo sau này
-          # '|| true' để code không dừng lại nếu test bị FAIL nhé
           go test -json -v -tags automation ./tests/automation/... > auto_report.json || true
           cat auto_report.json | gotestsum --format github-actions
 
       - name: Generate HTML Report
         if: always()
         run: |
-          # Chỉ gộp những file JSON thực sự tồn tại
-          [ -f unit_report.json ] && cp unit_report.json total_report.json || touch total_report.json
-          [ -f auto_report.json ] && cat auto_report.json >> total_report.json || true
-          
-          # Tạo báo cáo HTML từ file tổng hợp
-          if [ -s total_report.json ]; then
-            go-test-report -input total_report.json -output report.html
-          else
-            echo "No test results found to generate report."
-          fi
+          # Gộp cả 2 báo cáo JSON (nếu có) để tạo 1 file HTML tổng hợp
+          # Ở đây đơn giản nhất là tạo từng file hoặc dùng tool gộp (nhưng go-test-report nhận 1 file)
+          # Tạm thời tạo báo cáo cho Automation hoặc cả 2
+          cat unit_report.json auto_report.json > total_report.json
+          go-test-report -input total_report.json -output report.html
 
       - name: Upload Test Report Artifact
         if: always()
