@@ -19,6 +19,11 @@ jobs:
         with:
           go-version: "1.25"
 
+      - name: Install reporting tools
+        run: |
+          go install gotest.tools/gotestsum@latest
+          go install github.com/vakenbolt/go-test-report@latest
+          
       - name: Run All Tests & Generate Report
         run: |
           # 1. Bật server ở chế độ background
