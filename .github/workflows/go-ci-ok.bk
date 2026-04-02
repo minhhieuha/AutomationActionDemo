@@ -2,9 +2,9 @@ name: Go CI
 
 on:
   push:
-    branches: ["main", "master", "develop"]
+    branches: ["**"]
   pull_request:
-    branches: ["main", "master", "develop"]
+    branches: [main, master, develop]
 
 jobs:
   test:
@@ -36,10 +36,10 @@ jobs:
         run: |
           # Bật server ở chế độ background
           go run main.go &
-
+          
           # Đợi cho đến khi server sẵn sàng (ping thành công)
           timeout 30s sh -c 'until curl -s http://127.0.0.1:8080/ping; do sleep 1; done'
-
+          
           # Chạy bộ Automation Test với output JSON
           # '|| true' để code không dừng lại nếu automation test bị FAIL (vì ta vẫn muốn báo cáo)
           go test -json -v -tags automation ./tests/automation/... > auto_report.json || true
@@ -51,12 +51,12 @@ jobs:
           # Ghép các file JSON và lọc lấy các dòng JSON hợp lệ của Go Test
           [ -f unit_report.json ] && grep "^{.*}$" unit_report.json > total_report.json || touch total_report.json
           [ -f auto_report.json ] && grep "^{.*}$" auto_report.json >> total_report.json || true
-
+          
           # Nếu file tổng hợp có dữ liệu, thử tạo báo cáo
           if [ -s total_report.json ]; then
             # Thử dùng công cụ chính, nếu lỗi (do Panic) thì tự tạo HTML đơn giản
             cat total_report.json | go-test-report -o report.html || {
-              echo "<html><body><h1>Tests Failed with Panic</h1><pre>$(cat total_report.json | tail -n 20)</pre></body></html>" > report.html
+              echo "<html><body><h1>Tests Failed with Panic</h1><p>Check GitHub Actions logs for details.</p></body></html>" > report.html
             }
           else
             echo "<html><body><h1>No test results found</h1></body></html>" > report.html
@@ -68,17 +68,3 @@ jobs:
         with:
           name: Test-Report-HTML
           path: report.html
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [test]
-    # Chỉ deploy từ nhánh quan trọng (Main/Master)
-    if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    steps:
-      - name: Trigger Render Deploy
-        run: |
-          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
-            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-          else
-            echo "Warning: RENDER_DEPLOY_HOOK_URL secret not set. Skipping deployment."
-          fi
