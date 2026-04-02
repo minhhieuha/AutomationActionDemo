@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"testing-demo/delivery/cronjob"
 	httpDelivery "testing-demo/delivery/http"
@@ -27,9 +28,14 @@ func main() {
 	router := gin.Default()
 	httpDelivery.NewOrderHandler(router, orderUC)
 
-	log.Println("[SERVER] Starting HTTP server on :8080")
-	if err := router.Run(":8080"); err != nil {
+	// Render và các Cloud provider thường gán Port qua biến môi trường PORT
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("[SERVER] Starting HTTP server on :%s", port)
+	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("[SERVER] Failed to start: %v", err)
 	}
-	log.Println("TEST")
 }
