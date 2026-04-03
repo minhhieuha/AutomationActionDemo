@@ -55,17 +55,25 @@ pipeline {
 
         stage('Deploy to Render') {
             when {
-                anyOf {
-                    branch 'main'
-                    branch 'master'
-                    branch 'develop'
+                expression {
+                    // Kiểm tra nhánh linh hoạt hơn (hỗ trợ cả Git branch có prefix origin/)
+                    def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ""
+                    echo "🔍 Testing branch: ${currentBranch}"
+                    return currentBranch.contains('main') || currentBranch.contains('master') || currentBranch.contains('develop')
                 }
             }
             steps {
-                withCredentials([string(credentialsId: "${RENDER_HOOK_ID}", variable: 'RENDER_URL')]) {
-                    echo "🚀 Triggering Render Deployment..."
-                    // Dùng curl (Windows 10/11 đã tích hợp sẵn curl)
-                    bat "curl -X POST %RENDER_URL%"
+                script {
+                    try {
+                        withCredentials([string(credentialsId: "${RENDER_HOOK_ID}", variable: 'RENDER_URL')]) {
+                            echo "🚀 Triggering Render Deployment..."
+                            // Thêm flag -i để xem HTTP response từ Render
+                            bat "curl -i -X POST %RENDER_URL%"
+                        }
+                    } catch (Exception e) {
+                        echo "❌ Failed to trigger Render: ${e.getMessage()}"
+                        error("Deployment failed")
+                    }
                 }
             }
         }
