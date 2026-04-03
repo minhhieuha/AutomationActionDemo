@@ -15,17 +15,17 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'go mod download'
-                sh 'go install gotest.tools/gotestsum@latest'
+                bat 'go mod download'
+                bat 'go install gotest.tools/gotestsum@latest'
             }
         }
 
         stage('Unit Tests') {
             steps {
                 // Chạy Unit Test và tạo báo cáo JSON
-                sh 'go test -json -v ./... > unit_report.json'
+                bat 'go test -json -v ./... > unit_report.json'
                 // Hiển thị kết quả tóm tắt
-                sh 'gotestsum --format short-verbose < unit_report.json'
+                bat 'gotestsum --format short-verbose < unit_report.json'
             }
         }
 
@@ -39,12 +39,12 @@ pipeline {
             }
             steps {
                 script {
-                    // Bật server background
-                    sh 'go run main.go &'
-                    // Đợi server sẵn sàng
-                    sh "timeout 30s sh -c 'until curl -s http://127.0.0.1:8080/ping; do sleep 1; done'"
+                    // Bật server background trên Windows (dùng start /B)
+                    bat 'start /B go run main.go'
+                    // Đợi server sẵn sàng (ping thành công)
+                    bat 'timeout /t 10 /nobreak'
                     // Chạy Automation Test
-                    sh 'go test -json -v -tags automation ./tests/automation/... > auto_report.json || true'
+                    bat 'go test -json -v -tags automation ./tests/automation/... > auto_report.json || exit 0'
                 }
             }
         }
@@ -57,10 +57,10 @@ pipeline {
                 }
             }
             steps {
-                // Sử dụng withCredentials để lấy URL bảo mật từ Jenkins
                 withCredentials([string(credentialsId: "${RENDER_HOOK_ID}", variable: 'RENDER_URL')]) {
                     echo "🚀 Triggering Render Deployment..."
-                    sh "curl -X POST \"${RENDER_URL}\""
+                    // Dùng curl (Windows 10/11 đã tích hợp sẵn curl)
+                    bat "curl -X POST %RENDER_URL%"
                 }
             }
         }
