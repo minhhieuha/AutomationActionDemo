@@ -4,6 +4,10 @@ pipeline {
     environment {
         // ID của Secret chứa URL Deploy Hook trong Jenkins Credentials
         RENDER_HOOK_ID = 'render-deploy-hook-url'
+        
+        // Thêm thư mục bin của Go vào PATH để nhận lệnh gotestsum
+        // Sử dụng %USERPROFILE% để trỏ tới thư mục go của user hiện tại
+        PATH = "${PATH};${USERPROFILE}\\go\\bin"
     }
 
     stages {
