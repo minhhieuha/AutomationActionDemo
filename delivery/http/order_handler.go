@@ -26,7 +26,7 @@ func NewOrderHandler(router *gin.Engine, uc domain.OrderUsecase) {
 
 // Ping health check endpoint
 func (h *OrderHandler) Ping(c *gin.Context) {
-	fmt.Println("Auto Merge 2 - Source Tree CD")
+	fmt.Println("Auto Merge 2 - Source Tree CD - Jenkins")
 	c.JSON(http.StatusOK, gin.H{
 		"message": "pong",
 	})
