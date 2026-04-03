@@ -2,9 +2,13 @@ name: Go CI
 
 on:
   push:
-    branches: ["main", "master", "develop"]
+    branches: ["**"]
   pull_request:
     branches: ["main", "master", "develop"]
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   test:
@@ -69,7 +73,7 @@ jobs:
           name: Test-Report-HTML
           path: report.html
 
-  deploy:
+  deploy-render:
     runs-on: ubuntu-latest
     needs: [test]
     # Chỉ deploy từ nhánh quan trọng (Main/Master)
@@ -82,3 +86,55 @@ jobs:
           else
             echo "Warning: RENDER_DEPLOY_HOOK_URL secret not set. Skipping deployment."
           fi
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [test]
+    # Chỉ build image khi cần deploy (Main/Master)
+    if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/automation-demo:latest
+
+  deploy-aws:
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    # Chỉ deploy từ nhánh quan trọng (Main/Master)
+    if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Deploy to AWS EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Đăng nhập vào GHCR trên server AWS
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Tải bản mới nhất
+            docker pull ghcr.io/${{ github.repository_owner }}/automation-demo:latest
+
+            # Dừng và xóa container cũ nếu đang chạy
+            docker stop automation-container || true
+            docker rm automation-container || true
+
+            # Chạy bản mới
+            docker run -d --name automation-container \
+              -p 80:8080 \
+              -e PORT=8080 \
+              ghcr.io/${{ github.repository_owner }}/automation-demo:latest
